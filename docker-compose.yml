@@ -1,4 +1,10 @@
-name: "task-brief-company"
+# Isolated project name so parallel agents on other repos never collide on
+# container/network names (R4). Ports come from the block reserved for this
+# repo in projects/info/state/ports.md (20110-20119) - override via APP_PORT
+# if that port is busy on the host. "task-brief-company" was this repo's
+# pre-rename identity (see composer.json's own package name for the same
+# leftover) and is replaced here with the real repo name.
+name: product-catalog-api-p5
 
 # Every bind mount of the stack lives under var/ (R92): the local environment
 # file and the database state. The application source is baked into the image,
@@ -23,7 +29,7 @@ services:
       context: .
       dockerfile: build/php/Dockerfile
       target: runtime
-    container_name: task_brief_company_app
+    container_name: product_catalog_api_app
     restart: always
     depends_on:
       postgres:
@@ -42,10 +48,11 @@ services:
       DB_USERNAME: ${DB_USERNAME:?DB_USERNAME is required, copy .env.example to var/.env}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required, copy .env.example to var/.env}
     ports:
-      - "${APP_PORT:-8080}:8080"
+      # Reserved block for this repo: 20110-20119 (projects/info/state/ports.md).
+      - "${APP_PORT:-20110}:8080"
     <<: *resources-default
     networks:
-      - task-brief-company
+      - product-catalog-api
 
   test:
     build:
@@ -58,13 +65,13 @@ services:
     # of the local machine cannot change the result.
     <<: *resources-default
     networks:
-      - task-brief-company
+      - product-catalog-api
 
   postgres:
     build:
       context: .
       dockerfile: build/postgres/Dockerfile
-    container_name: task_brief_company_postgres
+    container_name: product_catalog_api_postgres
     restart: always
     environment:
       POSTGRES_DB: ${DB_DATABASE:?DB_DATABASE is required, copy .env.example to var/.env}
@@ -81,8 +88,8 @@ services:
       start_period: 20s
     <<: *resources-default
     networks:
-      - task-brief-company
+      - product-catalog-api
 
 networks:
-  task-brief-company:
-    name: task-brief-company
+  product-catalog-api:
+    name: product-catalog-api-p5
