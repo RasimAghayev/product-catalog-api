@@ -24,6 +24,13 @@ The contract of every endpoint is in [`docs/api.md`](docs/api.md).
 
 ## Running it
 
+A `Makefile` wraps the commands below (`make build`, `make up`, `make
+migrate`, `make token EMAIL=you@example.com`, ...; `make help`-style targets
+are documented inline in the file itself). `make up` never starts the stack
+on a red build or test: it depends on `make verify` (build the images, then
+run the test stage) first. Either the raw `docker compose` calls or the
+`make` targets work; they call the same stack.
+
 ```shell
 mkdir -p var
 cp .env.example var/.env
@@ -46,8 +53,10 @@ until they are set.
 The command prints a token. Send it in the header
 `Authorization: Bearer <token>`.
 
-The application is reachable at `http://localhost:8080`. `APP_PORT` in
-`var/.env` moves it to another host port.
+The application is reachable at `http://localhost:20110` by default — this
+program's reserved port block for this repo
+(`projects/info/state/ports.md`: `20110-20119`). `APP_PORT` in `var/.env`
+moves it to another host port.
 
 Every bind mount of the stack lives under `var/`, so the repository holds no
 state of its own: `var/.env` is the local environment file and

@@ -26,17 +26,23 @@ COPY --from=composer:2@sha256:af98f42dfff7c68ba8d53c2164fd9fde1087b7d449514baa38
 WORKDIR /var/www/html
 
 # The dependency layer. The lock file alone decides the tree, so the layer is
-# reused whenever only the application code changes.
+# reused whenever only the application code changes. The cache mount keeps
+# Composer's own download cache across builds without baking it into any
+# image layer (BuildKit only, never shared outside the build).
 FROM base AS vendor
 
 COPY composer.json composer.lock ./
-RUN composer install --no-interaction --no-progress --no-scripts --prefer-dist
+RUN --mount=type=cache,target=/tmp/composer-cache,sharing=locked \
+    COMPOSER_CACHE_DIR=/tmp/composer-cache \
+    composer install --no-interaction --no-progress --no-scripts --prefer-dist
 
 # The runtime image installs only the production dependencies.
 FROM base AS vendor-prod
 
 COPY composer.json composer.lock ./
-RUN composer install --no-interaction --no-progress --no-scripts --no-dev --prefer-dist
+RUN --mount=type=cache,target=/tmp/composer-cache,sharing=locked \
+    COMPOSER_CACHE_DIR=/tmp/composer-cache \
+    composer install --no-interaction --no-progress --no-scripts --no-dev --prefer-dist
 
 # The test image carries the suite next to the application. The suite runs
 # against an in memory database, so it needs neither a database nor a
