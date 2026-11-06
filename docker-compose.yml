@@ -78,6 +78,14 @@ services:
       POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME is required, copy .env.example to var/.env}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required, copy .env.example to var/.env}
       POSTGRES_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required, copy .env.example to var/.env}
+      # Postgres 18's image moved its default PGDATA to a major-version-
+      # specific subdirectory of /var/lib/postgresql (docker-library/postgres
+      # #1259, for pg_upgrade --link support). This repo's bind mount points
+      # straight at .../data with no existing on-disk database to migrate, so
+      # the upstream-documented backward-compatible override is used instead
+      # of restructuring the mount: same path as every prior major, nothing
+      # else in the stack has to change.
+      PGDATA: /var/lib/postgresql/data
     volumes:
       - ./var/postgres:/var/lib/postgresql/data
     healthcheck:
