@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Pre-commit secret scan (gitleaks), added in Phase 4 (git hygiene).
+#
+# Enable once per local clone:
+#   git config core.hooksPath .githooks
+#
+# Scans a snapshot of the staged blobs only (what is actually about to be
+# committed) with gitleaks' --no-git mode. This deliberately avoids asking
+# gitleaks/git to read repo internals (.git) through a Docker bind mount:
+# in a `git worktree` checkout the worktree's .git is a text pointer file
+# containing an ABSOLUTE host path (e.g. a Windows "D:/..." path in a
+# worktree created on Windows); that path cannot resolve inside a Linux
+# container no matter how volumes are mounted, which silently makes
+# gitleaks scan 0 bytes and report "no leaks found" even when a real
+# secret is staged. Snapshotting the staged content first sidesteps that
+# failure mode entirely and behaves identically in a plain clone or a
+# worktree, Linux or Windows.
+set -euo pipefail
+
+if git diff --cached --quiet; then
+  exit 0
+fi
+
+TOPLEVEL="$(git rev-parse --show-toplevel)"
+SCRATCH="$TOPLEVEL/.gitleaks-staged-tmp"
+rm -rf "$SCRATCH"
+mkdir -p "$SCRATCH"
+cleanup() { rm -rf "$SCRATCH"; }
+trap cleanup EXIT
+
+# Materialize exactly the staged version of each added/changed/renamed file.
+had_file=0
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  had_file=1
+  mkdir -p "$SCRATCH/$(dirname "$f")"
+  git show ":$f" > "$SCRATCH/$f" 2>/dev/null || true
+done < <(git diff --cached --name-only --diff-filter=ACMR)
+
+if [ "$had_file" -eq 0 ]; then
+  exit 0
+fi
+
+run_gitleaks() {
+  if command -v gitleaks >/dev/null 2>&1; then
+    gitleaks detect --no-git --source="$SCRATCH" -v
+    return $?
+  fi
+
+  if command -v docker >/dev/null 2>&1; then
+    # MSYS_NO_PATHCONV avoids Git-Bash-on-Windows mangling the /scratch mount path.
+    MSYS_NO_PATHCONV=1 docker run --rm \
+      -v "$SCRATCH:/scratch" \
+      zricethezav/gitleaks:latest detect --no-git --source=/scratch -v
+    return $?
+  fi
+
+  echo "WARNING: gitleaks not found on PATH and Docker is unavailable." >&2
+  echo "WARNING: skipping the local secret scan for this commit." >&2
+  echo "WARNING: install gitleaks (https://github.com/gitleaks/gitleaks) or Docker" >&2
+  echo "WARNING: to get local protection; CI still runs a secret-scan job." >&2
+  return 0
+}
+
+if ! run_gitleaks; then
+  echo "" >&2
+  echo "gitleaks found a potential secret in your staged changes — commit blocked." >&2
+  echo "Move the value to an environment variable / untracked .env file and retry." >&2
+  echo "False positive? See https://github.com/gitleaks/gitleaks#additional-configuration" >&2
+  exit 1
+fi
