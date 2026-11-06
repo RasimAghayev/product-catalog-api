@@ -5,7 +5,7 @@
 # source is copied into the image, so the container needs no bind mount of the
 # repository. Every bind mount of the compose stack lives under var/ (R92).
 
-FROM php:8.4-apache@sha256:aa8e130840d41caad97fb671cea5f7e9cc55449ea34fc6b3f0147a2da51c612a AS base
+FROM php:8.4-apache@sha256:884f64b47174de2c0e813270fe7b24a18605729fcebe201302d98c38805530d0 AS base
 
 # The application needs the pgsql and the zip extensions. The client library
 # of postgres is needed to build the pdo_pgsql extension.
