@@ -1,0 +1,44 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "schedule": ["before 6am on monday"],
+  "timezone": "UTC",
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "packageRules": [
+    {
+      "matchManagers": ["composer"],
+      "matchDepTypes": ["require-dev"],
+      "groupName": "PHP dev dependencies",
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "matchManagers": ["composer"],
+      "matchUpdateTypes": ["major"],
+      "groupName": null,
+      "labels": ["breaking-change-review"]
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "pinDigests": true
+    },
+    {
+      "matchManagers": ["dockerfile"],
+      "groupName": "Docker base images"
+    },
+    {
+      "matchManagers": ["npm"],
+      "enabled": false,
+      "description": "The npm/Vite toolchain at repo root is dead scaffolding (no build step in Docker/CI, no @vite() call in any view) and is scheduled for removal under YAGNI in Phase 7 of this repo's modernization pass. Disabled rather than left to churn out PRs for files about to be deleted; re-enable if that decision is ever reversed."
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"]
+  }
+}
