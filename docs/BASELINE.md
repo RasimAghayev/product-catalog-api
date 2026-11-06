@@ -185,3 +185,59 @@ line by line before being trusted — nothing was redone or discarded blind.
   (Phase 9 — needs application code, not Docker/Make).
 - The pre-existing CI audit-gate redness (Phase 6; recorded above as
   baseline, not fixed).
+
+## Phase 6 (`upgrader`), 2026-11-06 — re-verification after the dependency upgrade
+
+Every item in "Known baseline, not fixed" above that was routed to Phase 6
+is now closed. Full per-commit evidence in
+`projects/info/state/handoff/6/product-catalog-api.md`; summary here per
+CLAUDE.md's "the Phase 5 baseline is the contract" — this section records
+what changed against it, not a new baseline.
+
+| Item | Phase 5 baseline | Phase 6 result |
+|---|---|---|
+| `composer audit --locked` | 8 advisories / 5 Symfony packages | **0 advisories** |
+| `php` base image | `8.4-apache` (stale digest within tag) | `8.5-apache` (current digest, current supported PHP line) |
+| `composer:2` base image | stale digest | current digest |
+| `postgres` base image | `16-alpine` (stale digest, 2 majors behind) | `18-alpine` (current digest, current major) |
+| `laravel/framework` | v12.70.0 | v13.40.0 |
+| `laravel/tinker` | v2.11.1 | v3.0.2 |
+| `guzzlehttp/guzzle` | 7.16.1 (unused) | 8.3.1 (still unused — Phase 7's call) |
+| `phpunit/phpunit` | 11.5.57 | 13.4.6 |
+| `actions/checkout` | `@v4.2.2` (tag) | `@v7.0.1` (commit SHA) |
+| CI "Audit the dependencies" step | red (pre-existing, documented) | **green** (re-verified locally: `make audit` exit 0) |
+
+Re-ran the full gate after every bump: `make verify` (build+test,
+PHPUnit 13.4.6 on PHP 8.5.12, 30/30 tests, 77 assertions — same counts as
+the Phase 5 baseline, no regression); `make lint` (Pint, 70 files, 0
+violations, unchanged); `make up` + `make migrate` + a real
+`curl /api/category` end-to-end smoke test on the new Postgres 18 image
+(public `GET` -> 200 with the same response shape as Phase 5's baseline;
+unauthenticated `POST` -> 401 via `auth:sanctum`, confirming the Laravel 13
+CSRF middleware rename changed nothing observable).
+
+One new finding this phase, not a regression: Postgres 18's official image
+changed its default `PGDATA` location (now a major-version-specific
+subdirectory, to support `pg_upgrade --link`); fixed with the image's own
+documented backward-compatible `PGDATA=/var/lib/postgresql/data` override
+on the `postgres` service rather than restructuring the bind mount. Worth
+remembering for the *next* Postgres major bump: if this repo ever needs a
+real `pg_upgrade` path (i.e., there is actual data to carry forward), the
+mount will need to move to `/var/lib/postgresql` (parent) at that point —
+not an issue today since `var/postgres` is a gitignored, disposable
+local-dev bind mount with nothing to upgrade in place.
+
+`docker scout cves` re-run on both new images (base images changed, so the
+Phase 5 scan no longer applies):
+
+| Image | Phase 5 baseline | Phase 6 (new base images) |
+|---|---|---|
+| `app` (`php:8.5-apache`) | 160 vulns/28 pkgs — 0C/7H/6M/147L | **158 vulns/27 pkgs — 0C/6H/6M/146L** |
+| `postgres` (`postgres:18-alpine`) | 75 vulns/6 pkgs — 5C/33H/30M/7L | **74 vulns/6 pkgs — 5C/32H/30M/7L** |
+
+Slight improvement on both images (newer OS packages), no new criticals, no
+regression. Remaining findings are the same category as Phase 5 recorded:
+Debian/Alpine OS-level packages with no fix published yet.
+
+Still open, unchanged from Phase 5 (not this phase's scope): `HEALTHCHECK`
+TCP-only (Phase 9); the inert npm/Vite layer (Phase 7 removal).

@@ -5,7 +5,7 @@
 # source is copied into the image, so the container needs no bind mount of the
 # repository. Every bind mount of the compose stack lives under var/ (R92).
 
-FROM php:8.4-apache@sha256:aa8e130840d41caad97fb671cea5f7e9cc55449ea34fc6b3f0147a2da51c612a AS base
+FROM php:8.5-apache@sha256:08af36df144462d84c7f16190557eec06cb9f656882685610b712a15eec54d46 AS base
 
 # The application needs the pgsql and the zip extensions. The client library
 # of postgres is needed to build the pdo_pgsql extension.
@@ -21,7 +21,7 @@ RUN a2enmod rewrite
 
 # The composer of the matching version, so the lock file is installed the way
 # it was resolved.
-COPY --from=composer:2@sha256:af98f42dfff7c68ba8d53c2164fd9fde1087b7d449514baa38c418b1f6bc4bac /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2@sha256:8de2184c6de224f4689e8f80ed5f5edaf0030b6b8b7839a22a2bcb6722ac87d0 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
