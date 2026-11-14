@@ -22,6 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
             ThrottleRequests::class.':api',
         ]);
     })
+    ->withRouting(
+        web: base_path('routes/web.php'),
+        api: base_path('routes/api.php'),
+    )
     ->withExceptions(function (Exceptions $exceptions) {
         // The application is an API, so every answer of it is JSON. Without
         // this, an unauthenticated request tried to redirect to a route
