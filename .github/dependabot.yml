@@ -14,20 +14,6 @@ updates:
       prefix: "build(deps)"
       prefix-development: "build(deps-dev)"
 
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "npm"
-    commit-message:
-      prefix: "build(deps)"
-      prefix-development: "build(deps-dev)"
-
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
