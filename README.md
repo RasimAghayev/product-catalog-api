@@ -1,6 +1,6 @@
 # product-catalog-api
 ![Views](https://hits.sh/github.com/RasimAghayev/product-catalog-api.svg?label=views&color=0e75b6)
-
+[![CI](https://github.com/RasimAghayev/product-catalog-api/actions/workflows/ci.yml/badge.svg)](https://github.com/RasimAghayev/product-catalog-api/actions/workflows/ci.yml)
 
 A catalogue API for a company brief: categories with subcategories, and
 products that belong to at least one category and carry a price range.
